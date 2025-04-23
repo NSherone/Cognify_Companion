@@ -1,0 +1,37 @@
+/* src/styles/globals.css */
+
+/* Tailwind's base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom global styles */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f9fafb;
+  color: #333;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  color: #4c51bf;
+}
+html {
+    @apply bg-sky-50 text-gray-900 transition-colors;
+  }
+  
+  html.dark {
+    @apply bg-gray-900 text-gray-100;
+  }
+  
+  body {
+    @apply bg-blue-50 min-h-screen text-gray-800 dark:bg-gray-800 dark:text-gray-100 transition-colors duration-300;
+  }
+  
+  main {
+    @apply px-6 py-8 max-w-7xl mx-auto;
+  }
+  
