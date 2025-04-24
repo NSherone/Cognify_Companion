@@ -137,7 +137,7 @@ def extract_methodology_with_openrouter(summary_text):
     """
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization":"Bearer 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",  
+        "Authorization":"Bearer API Key",  
         "Content-Type": "application/json",
     }
     data = json.dumps({
@@ -169,7 +169,7 @@ def extract_key_sections(summary_text):
 
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer API Key",
         "Content-Type": "application/json",
     }
 
@@ -224,7 +224,7 @@ def generate_project_ideas(key_sections):
 
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer API Key",
         "Content-Type": "application/json",
     }
 
