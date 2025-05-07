@@ -2,9 +2,10 @@ import os
 import json
 import nltk
 import torch
-import fitz  # PyMuPDF
+import fitz  
 import requests
 from tqdm import tqdm
+from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,9 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from keybert import KeyBERT
 from nltk.corpus import stopwords
 from sentence_transformers import SentenceTransformer
+
+
+load_dotenv()
 
 nltk.download("punkt")
 nltk.download("stopwords")
@@ -41,10 +45,6 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 kw_model = KeyBERT(model=embedding_model)
 
 stop_words = set(stopwords.words("english"))
-
-# ----------------------------
-# Utility Functions
-# ----------------------------
 
 def extract_text_from_pdf(pdf_path):
     try:
@@ -119,7 +119,6 @@ def highlight_sentences_in_pdf(pdf_path, key_points, threshold=1):
                             insts = page.search_for(sentence)
                             for inst in insts:
                                 page.add_highlight_annot(inst)
-
             highlighted_path = f"/tmp/{os.path.splitext(os.path.basename(pdf_path))[0]}_highlighted.pdf"
             doc.save(highlighted_path)
             return highlighted_path
@@ -129,139 +128,83 @@ def highlight_sentences_in_pdf(pdf_path, key_points, threshold=1):
 
 def extract_methodology_with_openrouter(summary_text):
     prompt = f"""
-    Given the following summary of a research paper, please extract the specific research methodology used in the study. The methodology should include the research design, data collection methods, data analysis techniques, and any tools or frameworks used. Additionally, provide a brief description or explanation of the methodology.
+    Given the following summary of a research paper, please extract the specific research methodology used.
 
     Summary: {summary_text}
 
     Methodology:
     """
-    url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization":"Bearer API Key",  
+        "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
         "Content-Type": "application/json",
     }
     data = json.dumps({
         "model": "deepseek/deepseek-r1:free",
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+        "messages": [{"role": "user", "content": prompt}]
     })
-    response = requests.post(url, headers=headers, data=data)
+    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=data)
     if response.status_code == 200:
-        response_data = response.json()
-        return response_data['choices'][0]['message']['content'].strip()
+        return response.json()["choices"][0]["message"]["content"].strip()
     else:
         print(f"[ERROR] OpenRouter API: {response.status_code}, {response.text}")
         return "Methodology extraction failed."
 
-# Helper function to extract key sections from the summary
 def extract_key_sections(summary_text):
     prompt = f"""
-    Please extract the key sections from the following research paper summary. Focus on the abstract, conclusion, and future work sections.
+    Please extract the key sections from the following research paper summary.
 
     Summary: {summary_text}
 
     Key Sections:
     """
-
-    url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer API Key",
+        "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
         "Content-Type": "application/json",
     }
-
     data = json.dumps({
         "model": "nousresearch/deephermes-3-llama-3-8b-preview:free",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
+        "messages": [{"role": "user", "content": prompt}]
     })
-
     try:
-        response = requests.post(url, headers=headers, data=data)
-        response.raise_for_status()  # Raises an HTTPError for bad responses
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=data)
+        response.raise_for_status()
         response_data = response.json()
-        
-        # Check if the expected structure exists
-        if 'choices' in response_data and len(response_data['choices']) > 0:
-            if 'message' in response_data['choices'][0] and 'content' in response_data['choices'][0]['message']:
-                return response_data['choices'][0]['message']['content'].strip()
-        
-        print(f"[WARNING] Unexpected API response structure: {response_data}")
-        return None
-        
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] OpenRouter API request failed: {e}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"[ERROR] Failed to decode API response: {e}")
-        return None
+        return response_data['choices'][0]['message']['content'].strip()
     except Exception as e:
-        print(f"[ERROR] Unexpected error in extract_key_sections: {e}")
+        print(f"[ERROR] Key section extraction failed: {e}")
         return None
 
 def generate_project_ideas(key_sections):
     if not key_sections:
-        print("No key sections provided for project idea generation.")
         return "Project idea generation skipped due to missing key sections."
 
     prompt = f"""
-    Please generate creative and feasible five **project ideas** based on the following research paper summary.
-    Use the context from the abstract, conclusion, and future work to suggest:
-    - Real-world implementation ideas
-    - Academic or industry research projects
-    - Prototype or product development ideas
-    - Applications of the findings
+    Based on the research summary below, generate five creative project ideas.
 
     Research Summary Key Sections:
     {key_sections}
 
     Project Ideas:
     """
-
-    url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer API Key",
+        "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
         "Content-Type": "application/json",
     }
-
     data = json.dumps({
         "model": "nousresearch/deephermes-3-llama-3-8b-preview:free",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
+        "messages": [{"role": "user", "content": prompt}]
     })
-
     try:
-        response = requests.post(url, headers=headers, data=data)
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=data)
         response.raise_for_status()
-        response_data = response.json()
-        
-        # Check if the expected structure exists
-        if 'choices' in response_data and len(response_data['choices']) > 0:
-            if 'message' in response_data['choices'][0] and 'content' in response_data['choices'][0]['message']:
-                return response_data['choices'][0]['message']['content'].strip()
-        
-        print(f"[WARNING] Unexpected API response structure: {response_data}")
-        return "Failed to generate project ideas due to unexpected API response."
-        
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] OpenRouter API request failed: {e}")
-        return "Project idea generation failed due to API error."
-    except json.JSONDecodeError as e:
-        print(f"[ERROR] Failed to decode API response: {e}")
-        return "Project idea generation failed due to invalid API response."
+        return response.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"[ERROR] Unexpected error in generate_project_ideas: {e}")
-        return "Project idea generation failed due to unexpected error."
-    
+        print(f"[ERROR] Project idea generation failed: {e}")
+        return "Project idea generation failed."
+
 @app.post("/summarize-pdf/")
 async def summarize_pdf(file: UploadFile = File(...)):
     try:
-        # Save the uploaded file
         upload_dir = "/tmp"
         os.makedirs(upload_dir, exist_ok=True)
         pdf_path = os.path.join(upload_dir, file.filename)
@@ -269,16 +212,13 @@ async def summarize_pdf(file: UploadFile = File(...)):
         with open(pdf_path, "wb") as f:
             f.write(await file.read())
 
-        # Extract text from PDF
         text = extract_text_from_pdf(pdf_path)
         if not text.strip():
             return JSONResponse(status_code=400, content={"error": "PDF has no extractable text."})
 
-        # Split text into chunks for processing
         chunks = split_text_into_chunks(text)
         summaries, keywords_set, key_points_all = [], set(), []
 
-        # Process each chunk
         for chunk in tqdm(chunks, desc="Processing chunks"):
             summary = summarize_text(chunk)
             summaries.append(summary)
@@ -286,19 +226,9 @@ async def summarize_pdf(file: UploadFile = File(...)):
             key_points_all.extend(generate_summary_points(chunk).split("\n"))
 
         merged_summary = " ".join(summaries)
-        
-        # Extract key sections from the merged summary
         key_sections = extract_key_sections(merged_summary)
-        
-        # Generate project ideas (handle case where key_sections is None)
-        idea_generated = "Project idea generation skipped due to missing key sections."
-        if key_sections:
-            idea_generated = generate_project_ideas(key_sections) or idea_generated
-
-        # Extract methodology
+        idea_generated = generate_project_ideas(key_sections) if key_sections else "Project idea generation skipped."
         methodology = extract_methodology_with_openrouter(merged_summary)
-
-        # Highlight key points in the PDF
         highlighted_pdf = highlight_sentences_in_pdf(pdf_path, key_points_all)
         highlighted_pdf_url = f"/tmp/{os.path.basename(highlighted_pdf)}" if highlighted_pdf else None
 

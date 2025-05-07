@@ -1,7 +1,37 @@
-export const section = 'bg-blue-50 py-16 px-6 flex flex-col items-center text-center dark:bg-gray-800 ';
+export const section = `
+  bg-blue-50 
+  dark:bg-gray-800 
+  py-12 sm:py-16 lg:py-20 
+  px-4 sm:px-6 
+  flex flex-col 
+  items-center 
+  text-center
+`;
 
-export const title = 'text-3xl md:text-4xl font-bold text-gray-800 mb-6  dark:text-gray-300 mt-2';
+export const title = `
+  text-2xl sm:text-3xl md:text-4xl 
+  font-bold 
+  text-gray-800 
+  dark:text-gray-300 
+  mb-4 sm:mb-6 
+  mt-2 
+  leading-tight
+`;
 
-export const subtitle = 'text-md md:text-lg text-gray-600 mb-10 max-w-xl  dark:text-gray-300 mt-2';
+export const subtitle = `
+  text-sm sm:text-md md:text-lg 
+  text-gray-600 
+  dark:text-gray-300 
+  mb-6 sm:mb-10 
+  max-w-2xl 
+  mt-2
+`;
 
-export const videoWrapper = 'w-full max-w-4xl aspect-video rounded-xl overflow-hidden shadow-lg';
+export const videoWrapper = `
+  w-full 
+  max-w-4xl 
+  aspect-video 
+  rounded-xl 
+  overflow-hidden 
+  shadow-lg
+`;

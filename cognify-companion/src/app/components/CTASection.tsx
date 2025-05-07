@@ -1,5 +1,3 @@
-// src/components/CTASection/CTASection.tsx
-
 'use client';
 
 import { motion } from 'framer-motion';

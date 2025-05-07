@@ -88,7 +88,6 @@ const UploadPage = () => {
         apiCallFinished = true;
       });
 
-      // Simulate progress during API call with variable speed
       for (let i = 11; i <= 100; i++) {
         if (apiCallFinished) break;
         let delay = 100;
@@ -113,7 +112,6 @@ const UploadPage = () => {
       completedStages++;
       updateProgress(100);
 
-      // If methodology extraction is selected
       if (tasks.includes("Extract Methodology")) {
         for (let i = 0; i <= 100; i++) {
           let delay = 100;
@@ -128,7 +126,6 @@ const UploadPage = () => {
       }
 
       if (tasks.includes("Generate Research Ideas")) {
-        // Simulate progress with similar variable speed
         for (let i = 0; i <= 100; i++) {
           let delay = 100;
           if (i < 30) delay = 150 - i * 2;
@@ -141,7 +138,6 @@ const UploadPage = () => {
         completedStages++;
       }
 
-      // Save all results to localStorage
       localStorage.setItem(
         "summaryResult",
         JSON.stringify({
@@ -166,7 +162,6 @@ const UploadPage = () => {
     }
   };
 
-  // Rest of your component remains exactly the same...
   return (
     <main className={styles.pageWrapper}>
       <section className={styles.section}>
@@ -178,12 +173,12 @@ const UploadPage = () => {
         </div>
 
         <motion.div
-          className={uploaderStyles.wrapper}
+          className={`${uploaderStyles.wrapper}`}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <label className={uploaderStyles.uploadBox}>
+          <label className={`${uploaderStyles.uploadBox} w-full`}>
             <input
               type="file"
               accept=".pdf"
@@ -204,7 +199,7 @@ const UploadPage = () => {
         </motion.div>
 
         <motion.div
-          className={taskStyles.wrapper}
+          className={`${taskStyles.wrapper}`}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -213,7 +208,7 @@ const UploadPage = () => {
             (task) => (
               <motion.div
                 key={task}
-                className={`${taskStyles.taskItem} ${
+                className={`${taskStyles.taskItem} w-full flex-wrap ${
                   tasks.includes(task)
                     ? "border-2 border-indigo-600"
                     : "border border-gray-300 dark:border-gray-600"
@@ -228,7 +223,11 @@ const UploadPage = () => {
                   className="mr-2 accent-indigo-600"
                   onChange={() => toggleTask(task)}
                 />
-                <span className={task === "Summarize" ? "font-semibold" : ""}>
+                <span
+                  className={`text-sm sm:text-base ${
+                    task === "Summarize" ? "font-semibold" : ""
+                  }`}
+                >
                   {task} {task === "Summarize" && "(required)"}
                 </span>
               </motion.div>
@@ -258,7 +257,7 @@ const UploadPage = () => {
               <p className="text-center text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
                 ⏳ Deep Analysis in Progress ⏳
               </p>
-              <p className="text-center text-sm text-gray-600 dark:text-gray-300 mb-6 max-w-xl mx-auto">
+              <p className="text-center text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-6 max-w-xl mx-auto">
                 Great things take time — and your research deserves no less.
                 We're carefully analyzing your paper to extract meaningful
                 insights. This process might take a few moments, but it’s a
@@ -269,10 +268,7 @@ const UploadPage = () => {
               <div className="flex mb-2">
                 <div
                   className="w-full bg-gray-200 rounded-full"
-                  style={{
-                    height: "6px",
-                    backgroundColor: "#e5e7eb",
-                  }}
+                  style={{ height: "6px" }}
                 >
                   <div
                     className="bg-indigo-600 h-2.5 rounded-full"
