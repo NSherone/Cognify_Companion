@@ -2,7 +2,7 @@ import os
 import json
 import nltk
 import torch
-import fitz  
+import fitz
 import requests
 from tqdm import tqdm
 from dotenv import load_dotenv
@@ -14,9 +14,11 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from keybert import KeyBERT
 from nltk.corpus import stopwords
 from sentence_transformers import SentenceTransformer
+from pathlib import Path
 
-
-load_dotenv()
+# Load environment variables
+dotenv_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path)
 
 nltk.download("punkt")
 nltk.download("stopwords")
@@ -50,6 +52,9 @@ def extract_text_from_pdf(pdf_path):
     try:
         text = ""
         with fitz.open(pdf_path) as doc:
+            if doc.is_encrypted:
+                print("[ERROR] PDF is encrypted.")
+                return ""
             for page in doc:
                 text += page.get_text("text")
         return text
@@ -109,6 +114,9 @@ def preprocess_text(text):
 def highlight_sentences_in_pdf(pdf_path, key_points, threshold=1):
     try:
         with fitz.open(pdf_path) as doc:
+            if doc.is_encrypted:
+                print("[ERROR] PDF is encrypted.")
+                return None
             for page in doc:
                 sentences = page.get_text("text").split("\n")
                 for key_point in key_points:
@@ -128,12 +136,13 @@ def highlight_sentences_in_pdf(pdf_path, key_points, threshold=1):
 
 def extract_methodology_with_openrouter(summary_text):
     prompt = f"""
-    Given the following summary of a research paper, please extract the specific research methodology used.
+   Given the following summary of a research paper, please extract the specific research methodology used in the study. The methodology should include the research design, data collection methods, data analysis techniques, and any tools or frameworks used. Additionally, provide a brief description or explanation of the methodology.
 
     Summary: {summary_text}
 
     Methodology:
     """
+    
     headers = {
         "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
         "Content-Type": "application/json",
@@ -151,11 +160,11 @@ def extract_methodology_with_openrouter(summary_text):
 
 def extract_key_sections(summary_text):
     prompt = f"""
-    Please extract the key sections from the following research paper summary.
+    Please extract the key sections from the following research paper summary. Focus on the abstract, conclusion, and future work sections.
 
     Summary: {summary_text}
 
-    Key Sections:
+    Key Sections::
     """
     headers = {
         "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
@@ -168,8 +177,7 @@ def extract_key_sections(summary_text):
     try:
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=data)
         response.raise_for_status()
-        response_data = response.json()
-        return response_data['choices'][0]['message']['content'].strip()
+        return response.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
         print(f"[ERROR] Key section extraction failed: {e}")
         return None
@@ -179,12 +187,17 @@ def generate_project_ideas(key_sections):
         return "Project idea generation skipped due to missing key sections."
 
     prompt = f"""
-    Based on the research summary below, generate five creative project ideas.
+       Please generate creative and feasible **project ideas** based on the following research paper summary.
+        Use the context from the abstract, conclusion, and future work to suggest:
+        - Real-world implementation ideas
+        - Academic or industry research projects
+        - Prototype or product development ideas
+        - Applications of the findings
 
-    Research Summary Key Sections:
-    {key_sections}
+        Research Summary Key Sections:
+        {key_sections}
 
-    Project Ideas:
+        Project Ideas:
     """
     headers = {
         "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
